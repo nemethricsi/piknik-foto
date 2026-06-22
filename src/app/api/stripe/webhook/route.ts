@@ -56,5 +56,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   await supabase.from("booking").insert({
     customer_id: customer.id,
     stripe_payment_intent: paymentIntent,
+    status: "booked",
   })
 }

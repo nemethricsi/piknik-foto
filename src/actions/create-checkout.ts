@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation"
 import { stripe } from "@/lib/stripe"
+import { createServiceClient } from "@/lib/supabase/server"
 
 type State = { error: string | null }
 
@@ -11,14 +12,31 @@ export async function createCheckout(
 ): Promise<State> {
   const email = formData.get("email")?.toString().trim()
   const phone = formData.get("phone")?.toString().trim()
+  const slotId = formData.get("time_slot_id")?.toString()
 
   if (!email || !phone) {
-    return { error: "Email and phone number are required." }
+    return { error: "Email-cím és telefonszám megadása kötelező." }
+  }
+
+  if (!slotId) {
+    return { error: "Nincs kiválasztott időpont." }
+  }
+
+  // Re-validate the slot is still available
+  const supabase = createServiceClient()
+  const { data: slot } = await supabase
+    .from("time_slot")
+    .select("id, revealed, booking_id")
+    .eq("id", slotId)
+    .single()
+
+  if (!slot || !slot.revealed || slot.booking_id !== null) {
+    return { error: "Ez az időpont már nem elérhető. Kérjük, válassz másikat." }
   }
 
   const priceId = process.env.STRIPE_PRICE_ID
   if (!priceId) {
-    return { error: "Checkout is not configured yet." }
+    return { error: "A foglalási rendszer nincs beállítva." }
   }
 
   // Find existing Stripe customer or create a new one
@@ -38,7 +56,8 @@ export async function createCheckout(
     line_items: [{ price: priceId, quantity: 1 }],
     mode: "payment",
     billing_address_collection: "required",
-    metadata: { phone, customer_email: email },
+    customer_update: { address: "auto" },
+    metadata: { phone, customer_email: email, time_slot_id: slotId },
     success_url: `${origin}/success`,
     cancel_url: `${origin}/`,
   })
