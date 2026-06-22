@@ -34,6 +34,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email = session.customer_details?.email ?? session.metadata?.customer_email
   const phone = session.metadata?.phone
   const slotId = session.metadata?.time_slot_id
+  const fullName = session.customer_details?.name ?? null
+  const spaceIdx = fullName?.indexOf(" ") ?? -1
+  const firstName = spaceIdx >= 0 ? fullName!.slice(0, spaceIdx) : fullName
+  const lastName = spaceIdx >= 0 ? fullName!.slice(spaceIdx + 1) : null
   const stripeCustomerId = typeof session.customer === "string" ? session.customer : null
   const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : null
 
@@ -54,7 +58,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const { data: customer } = await supabase
     .from("customer")
     .upsert(
-      { email, phone_number: phone ?? null, stripe_id: stripeCustomerId },
+      { email, phone_number: phone ?? null, stripe_id: stripeCustomerId, first_name: firstName, last_name: lastName },
       { onConflict: "email", ignoreDuplicates: false }
     )
     .select("id")
