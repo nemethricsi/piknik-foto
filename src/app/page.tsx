@@ -1,20 +1,20 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { BookingForm } from "@/components/booking-form"
+import { createServiceClient } from "@/lib/supabase/server"
+import { TimeSlotList, groupSlotsByDay } from "@/components/time-slot-list"
+import type { TimeSlot } from "@/components/time-slot-list"
 
-export default function Home() {
+export default async function Home() {
+  const supabase = createServiceClient()
+
+  const { data } = await supabase
+    .from("time_slot")
+    .select("id, start_time, end_time, revealed, booking_id")
+    .order("start_time", { ascending: true })
+
+  const days = groupSlotsByDay((data ?? []) as TimeSlot[])
+
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Book a session</CardTitle>
-          <CardDescription>
-            Fill in your details and you&apos;ll be taken to checkout.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <BookingForm />
-        </CardContent>
-      </Card>
+    <main className="flex min-h-screen flex-col items-center p-6 py-12">
+      <TimeSlotList days={days} />
     </main>
   )
 }
