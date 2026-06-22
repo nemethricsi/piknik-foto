@@ -11,7 +11,7 @@ import { BookingStatusSelect } from '@/components/booking-status-select';
 
 type Booking = {
   id: string;
-  created_at: string;
+  start_time: string;
   status: 'booked' | 'completed' | 'cancelled' | 'refunded';
   stripe_payment_intent: string | null;
   customer: {
@@ -28,9 +28,9 @@ export default async function AdminPage() {
   const { data: bookings } = await supabase
     .from('booking')
     .select(
-      'id, created_at, status, stripe_payment_intent, customer(email, phone_number, first_name, last_name)',
+      'id, start_time, status, stripe_payment_intent, customer(email, phone_number, first_name, last_name)',
     )
-    .order('created_at', { ascending: false });
+    .order('start_time', { ascending: true });
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -38,7 +38,7 @@ export default async function AdminPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Booked at</TableHead>
+            <TableHead>Időpont</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
@@ -50,7 +50,13 @@ export default async function AdminPage() {
           {(bookings as Booking[] | null)?.map((b) => (
             <TableRow key={b.id}>
               <TableCell className="whitespace-nowrap">
-                {new Date(b.created_at).toLocaleString('hu-HU')}
+                {new Date(b.start_time).toLocaleString('hu-HU', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false,
+                })}
               </TableCell>
               <TableCell>
                 {[b.customer?.first_name, b.customer?.last_name]
