@@ -87,6 +87,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Link the time slot to the booking
   await supabase
     .from("time_slot")
-    .update({ booking_id: booking.id })
+    .update({ booking_id: booking.id, revealed: false })
     .eq("id", slotId)
 }
