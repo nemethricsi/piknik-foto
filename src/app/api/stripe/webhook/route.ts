@@ -33,12 +33,22 @@ export async function POST(req: NextRequest) {
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email = session.customer_details?.email ?? session.metadata?.customer_email
   const phone = session.metadata?.phone
+  const slotId = session.metadata?.time_slot_id
   const stripeCustomerId = typeof session.customer === "string" ? session.customer : null
   const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : null
 
-  if (!email) return
+  if (!email || !slotId) return
 
   const supabase = createServiceClient()
+
+  // Fetch slot times
+  const { data: slot } = await supabase
+    .from("time_slot")
+    .select("start_time, end_time")
+    .eq("id", slotId)
+    .single()
+
+  if (!slot) return
 
   // Upsert customer
   const { data: customer } = await supabase
@@ -52,10 +62,27 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   if (!customer) return
 
-  // Create booking
-  await supabase.from("booking").insert({
-    customer_id: customer.id,
-    stripe_payment_intent: paymentIntent,
-    status: "booked",
-  })
+  // Create booking with slot times — upsert so duplicate webhook deliveries are no-ops
+  const { data: booking } = await supabase
+    .from("booking")
+    .upsert(
+      {
+        customer_id: customer.id,
+        stripe_payment_intent: paymentIntent,
+        status: "booked",
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+      },
+      { onConflict: "stripe_payment_intent", ignoreDuplicates: true }
+    )
+    .select("id")
+    .single()
+
+  if (!booking) return
+
+  // Link the time slot to the booking
+  await supabase
+    .from("time_slot")
+    .update({ booking_id: booking.id })
+    .eq("id", slotId)
 }
