@@ -7,10 +7,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { BookingStatusSelect } from "@/components/booking-status-select"
 
 type Booking = {
   id: string
   created_at: string
+  status: "booked" | "completed" | "cancelled" | "refunded"
   stripe_payment_intent: string | null
   customer: {
     email: string
@@ -25,7 +27,7 @@ export default async function AdminPage() {
 
   const { data: bookings } = await supabase
     .from("booking")
-    .select("id, created_at, stripe_payment_intent, customer(email, phone_number, first_name, last_name)")
+    .select("id, created_at, status, stripe_payment_intent, customer(email, phone_number, first_name, last_name)")
     .order("created_at", { ascending: false })
 
   return (
@@ -38,6 +40,7 @@ export default async function AdminPage() {
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Phone</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Payment intent</TableHead>
           </TableRow>
         </TableHeader>
@@ -54,6 +57,9 @@ export default async function AdminPage() {
               </TableCell>
               <TableCell>{b.customer?.email ?? "—"}</TableCell>
               <TableCell>{b.customer?.phone_number ?? "—"}</TableCell>
+              <TableCell>
+                <BookingStatusSelect id={b.id} status={b.status} />
+              </TableCell>
               <TableCell className="font-mono text-xs">
                 {b.stripe_payment_intent ?? "—"}
               </TableCell>
@@ -61,7 +67,7 @@ export default async function AdminPage() {
           ))}
           {(!bookings || bookings.length === 0) && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground">
+              <TableCell colSpan={6} className="text-center text-muted-foreground">
                 No bookings yet.
               </TableCell>
             </TableRow>
