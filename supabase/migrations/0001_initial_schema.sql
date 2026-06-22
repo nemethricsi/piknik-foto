@@ -2,7 +2,7 @@
 create extension if not exists "pgcrypto";
 
 -- Customers
-create table customer (
+create table if not exists customer (
   id            uuid primary key default gen_random_uuid(),
   email         text not null unique,
   phone_number  text,
@@ -14,7 +14,7 @@ create table customer (
 );
 
 -- Products
-create table product (
+create table if not exists product (
   id                uuid primary key default gen_random_uuid(),
   name              text not null,
   stripe_product_id text unique,
@@ -22,7 +22,7 @@ create table product (
 );
 
 -- Time slots (pre-seeded by admins)
-create table time_slot (
+create table if not exists time_slot (
   id         uuid primary key default gen_random_uuid(),
   start_time timestamptz not null,
   end_time   timestamptz not null,
@@ -32,7 +32,7 @@ create table time_slot (
 );
 
 -- Bookings
-create table booking (
+create table if not exists booking (
   id                    uuid primary key default gen_random_uuid(),
   start_time            timestamptz,
   end_time              timestamptz,
@@ -43,7 +43,7 @@ create table booking (
 
 -- Foreign key from time_slot.booking_id → booking.id (after booking table exists)
 alter table time_slot
-  add constraint fk_time_slot_booking
+  add constraint if not exists fk_time_slot_booking
   foreign key (booking_id) references booking(id) on delete set null;
 
 -- Row Level Security
@@ -53,7 +53,7 @@ alter table time_slot enable row level security;
 alter table booking   enable row level security;
 
 -- Public can read revealed, unbooked time slots (for the booking form)
-create policy "public read available time slots"
+create policy if not exists "public read available time slots"
   on time_slot for select
   using (revealed = true);
 
