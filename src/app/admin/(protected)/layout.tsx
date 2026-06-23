@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <SidebarProvider>
-      <AdminSidebar />
+      <AdminSidebar userName={user.email ?? ''} />
       <SidebarInset>
         <header className="flex h-14 items-center border-b px-4">
           <SidebarTrigger />

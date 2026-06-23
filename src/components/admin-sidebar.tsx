@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CalendarDays, Clock, LogOut } from 'lucide-react';
+import { CalendarDays, ChevronUp, Clock, LogOut, User2 } from 'lucide-react';
 import { useEffect } from 'react';
 import {
   Sidebar,
@@ -16,7 +16,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
 
 const navItems = [
@@ -24,7 +29,7 @@ const navItems = [
   { label: 'Időpontok', href: '/admin/time-slots', icon: Clock },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ userName }: { userName: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -65,14 +70,32 @@ export function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-2"
-          onClick={handleLogout}
-        >
-          <LogOut className="size-4" />
-          Kijelentkezés
-        </Button>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg">
+                  <User2 className="size-4" />
+                  <span className="flex-1 truncate text-left text-sm">
+                    {userName}
+                  </span>
+                  <ChevronUp className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side={isMobile ? 'bottom' : 'top'}
+                align="end"
+                sideOffset={4}
+                className="min-w-48"
+              >
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="size-4" />
+                  Kijelentkezés
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   );
