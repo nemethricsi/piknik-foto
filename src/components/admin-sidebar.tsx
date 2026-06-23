@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CalendarDays, LogOut } from 'lucide-react';
+import { CalendarDays, Clock, LogOut } from 'lucide-react';
 import { useEffect } from 'react';
 import {
   Sidebar,
@@ -19,7 +19,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 
-const navItems = [{ label: 'Foglalások', href: '/admin', icon: CalendarDays }];
+const navItems = [
+  { label: 'Foglalások', href: '/admin', icon: CalendarDays },
+  { label: 'Időpontok', href: '/admin/time-slots', icon: Clock },
+];
 
 export function AdminSidebar() {
   const pathname = usePathname();
