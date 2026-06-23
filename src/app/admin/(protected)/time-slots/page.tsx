@@ -12,8 +12,13 @@ import { RevealedSwitch } from '@/components/revealed-switch'
 type TimeSlot = {
   id: string
   start_time: string
-  booking_id: string | null
   revealed: boolean
+  booking: {
+    customer: {
+      first_name: string | null
+      last_name: string | null
+    } | null
+  } | null
 }
 
 function groupByDay(slots: TimeSlot[]) {
@@ -41,7 +46,7 @@ export default async function TimeSlotsPage() {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('time_slot')
-    .select('id, start_time, booking_id, revealed')
+    .select('id, start_time, revealed, booking(customer(first_name, last_name))')
     .order('start_time', { ascending: true })
 
   const days = groupByDay((data as TimeSlot[] | null) ?? [])
@@ -60,7 +65,7 @@ export default async function TimeSlotsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Időpont</TableHead>
-                  <TableHead>Foglalás ID</TableHead>
+                  <TableHead>Foglalás</TableHead>
                   <TableHead>Megjelenít</TableHead>
                 </TableRow>
               </TableHeader>
@@ -75,14 +80,16 @@ export default async function TimeSlotsPage() {
                         hour12: false,
                       })}
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {slot.booking_id ?? '—'}
+                    <TableCell>
+                      {slot.booking?.customer
+                        ? `${slot.booking.customer.last_name ?? ''} ${slot.booking.customer.first_name ?? ''}`.trim()
+                        : '—'}
                     </TableCell>
                     <TableCell>
                       <RevealedSwitch
                         id={slot.id}
                         revealed={slot.revealed}
-                        disabled={slot.booking_id !== null}
+                        disabled={slot.booking !== null}
                       />
                     </TableCell>
                   </TableRow>

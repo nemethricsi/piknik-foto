@@ -59,7 +59,7 @@ export default async function AdminPage() {
                 })}
               </TableCell>
               <TableCell>
-                {[b.customer?.first_name, b.customer?.last_name]
+                {[b.customer?.last_name, b.customer?.first_name]
                   .filter(Boolean)
                   .join(' ') || '—'}
               </TableCell>

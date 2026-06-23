@@ -1,92 +1,101 @@
-import { NextRequest, NextResponse } from "next/server"
-import Stripe from "stripe"
-import { stripe } from "@/lib/stripe"
-import { createServiceClient } from "@/lib/supabase/server"
+import { NextRequest, NextResponse } from 'next/server';
+import Stripe from 'stripe';
+import { stripe } from '@/lib/stripe';
+import { createServiceClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
-  const body = await req.text()
-  const sig = req.headers.get("stripe-signature")
+  const body = await req.text();
+  const sig = req.headers.get('stripe-signature');
 
   if (!sig) {
-    return NextResponse.json({ error: "Missing signature" }, { status: 400 })
+    return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
   }
 
-  let event: Stripe.Event
+  let event: Stripe.Event;
   try {
     event = stripe.webhooks.constructEvent(
       body,
       sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    )
+      process.env.STRIPE_WEBHOOK_SECRET!,
+    );
   } catch {
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session
-    await handleCheckoutCompleted(session)
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    await handleCheckoutCompleted(session);
   }
 
-  return NextResponse.json({ received: true })
+  return NextResponse.json({ received: true });
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const email = session.customer_details?.email ?? session.metadata?.customer_email
-  const phone = session.customer_details?.phone ?? null
-  const slotId = session.metadata?.time_slot_id
-  const fullName = session.customer_details?.name ?? null
-  const spaceIdx = fullName?.indexOf(" ") ?? -1
-  const firstName = spaceIdx >= 0 ? fullName!.slice(0, spaceIdx) : fullName
-  const lastName = spaceIdx >= 0 ? fullName!.slice(spaceIdx + 1) : null
-  const stripeCustomerId = typeof session.customer === "string" ? session.customer : null
-  const paymentIntent = typeof session.payment_intent === "string" ? session.payment_intent : null
+  const email =
+    session.customer_details?.email ?? session.metadata?.customer_email;
+  const phone = session.customer_details?.phone ?? null;
+  const slotId = session.metadata?.time_slot_id;
+  const fullName = session.customer_details?.name ?? null;
+  const spaceIdx = fullName?.indexOf(' ') ?? -1;
+  const firstName = spaceIdx >= 0 ? fullName!.slice(spaceIdx + 1) : null;
+  const lastName = spaceIdx >= 0 ? fullName!.slice(0, spaceIdx) : fullName;
+  const stripeCustomerId =
+    typeof session.customer === 'string' ? session.customer : null;
+  const paymentIntent =
+    typeof session.payment_intent === 'string' ? session.payment_intent : null;
 
-  if (!email || !slotId) return
+  if (!email || !slotId) return;
 
-  const supabase = createServiceClient()
+  const supabase = createServiceClient();
 
   // Fetch slot times
   const { data: slot } = await supabase
-    .from("time_slot")
-    .select("start_time, end_time")
-    .eq("id", slotId)
-    .single()
+    .from('time_slot')
+    .select('start_time, end_time')
+    .eq('id', slotId)
+    .single();
 
-  if (!slot) return
+  if (!slot) return;
 
   // Upsert customer
   const { data: customer } = await supabase
-    .from("customer")
+    .from('customer')
     .upsert(
-      { email, phone_number: phone ?? null, stripe_id: stripeCustomerId, first_name: firstName, last_name: lastName },
-      { onConflict: "email", ignoreDuplicates: false }
+      {
+        email,
+        phone_number: phone ?? null,
+        stripe_id: stripeCustomerId,
+        first_name: firstName,
+        last_name: lastName,
+      },
+      { onConflict: 'email', ignoreDuplicates: false },
     )
-    .select("id")
-    .single()
+    .select('id')
+    .single();
 
-  if (!customer) return
+  if (!customer) return;
 
   // Create booking with slot times — upsert so duplicate webhook deliveries are no-ops
   const { data: booking } = await supabase
-    .from("booking")
+    .from('booking')
     .upsert(
       {
         customer_id: customer.id,
         stripe_payment_intent: paymentIntent,
-        status: "booked",
+        status: 'booked',
         start_time: slot.start_time,
         end_time: slot.end_time,
       },
-      { onConflict: "stripe_payment_intent", ignoreDuplicates: true }
+      { onConflict: 'stripe_payment_intent', ignoreDuplicates: true },
     )
-    .select("id")
-    .single()
+    .select('id')
+    .single();
 
-  if (!booking) return
+  if (!booking) return;
 
   // Link the time slot to the booking
   await supabase
-    .from("time_slot")
+    .from('time_slot')
     .update({ booking_id: booking.id, revealed: false })
-    .eq("id", slotId)
+    .eq('id', slotId);
 }
