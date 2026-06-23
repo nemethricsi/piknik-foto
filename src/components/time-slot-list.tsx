@@ -82,7 +82,7 @@ export function TimeSlotList({ days }: { days: DayGroup[] }) {
                             SZABAD
                           </Link>
                         ) : (
-                          <span className="cursor-not-allowed font-bold text-red-500">
+                          <span className="cursor-not-allowed font-medium text-red-500">
                             NEM ELÉRHETŐ
                           </span>
                         )}
