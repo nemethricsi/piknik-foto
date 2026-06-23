@@ -1,9 +1,9 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { CalendarDays, LogOut } from "lucide-react"
-import { useEffect } from "react"
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { CalendarDays, LogOut } from 'lucide-react';
+import { useEffect } from 'react';
 import {
   Sidebar,
   SidebarContent,
@@ -15,35 +15,33 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/client';
 
-const navItems = [
-  { label: "Foglalások", href: "/admin", icon: CalendarDays },
-]
+const navItems = [{ label: 'Foglalások', href: '/admin', icon: CalendarDays }];
 
 export function AdminSidebar() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const { isMobile, setOpenMobile } = useSidebar()
+  const pathname = usePathname();
+  const router = useRouter();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   useEffect(() => {
-    if (isMobile) setOpenMobile(false)
-  }, [pathname, isMobile, setOpenMobile])
+    if (isMobile) setOpenMobile(false);
+  }, [pathname, isMobile, setOpenMobile]);
 
   async function handleLogout() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/admin/login")
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/admin/login');
   }
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="px-2 py-1.5">
+        <Link href="/" className="px-2 py-1.5">
           <span className="font-bold">Piknik Fotó</span>
-        </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -74,5 +72,5 @@ export function AdminSidebar() {
         </Button>
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
