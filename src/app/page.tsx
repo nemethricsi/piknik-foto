@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { createServiceClient, createClient } from '@/lib/supabase/server';
-import { TimeSlotList, groupSlotsByDay } from '@/components/time-slot-list';
-import type { TimeSlot } from '@/components/time-slot-list';
+import { TimeSlotList } from '@/components/time-slot-list';
+import { groupSlotsByDay } from '@/components/time-slot-utils';
+import type { TimeSlot } from '@/components/time-slot-utils';
 
 export default async function Home() {
   const supabase = createServiceClient();

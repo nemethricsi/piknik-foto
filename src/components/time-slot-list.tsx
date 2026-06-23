@@ -1,29 +1,9 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-
-export type TimeSlot = {
-  id: string;
-  start_time: string;
-  end_time: string;
-  revealed: boolean;
-  booking_id: string | null;
-};
-
-export type DayGroup = {
-  dateKey: string;
-  heading: string;
-  slots: TimeSlot[];
-};
-
-function formatHeading(dateStr: string): string {
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('hu-HU', {
-    timeZone: 'Europe/Budapest',
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
-  });
-}
+import type { DayGroup, TimeSlot } from '@/components/time-slot-utils';
 
 function formatSlotTime(dateStr: string): string {
   const d = new Date(dateStr);
@@ -40,28 +20,9 @@ function isAvailable(slot: TimeSlot): boolean {
   return slot.revealed && slot.booking_id === null;
 }
 
-export function groupSlotsByDay(slots: TimeSlot[]): DayGroup[] {
-  const map = new Map<string, TimeSlot[]>();
-
-  for (const slot of slots) {
-    const d = new Date(slot.start_time);
-    const dateKey = d.toLocaleDateString('sv-SE', {
-      timeZone: 'Europe/Budapest',
-    }); // YYYY-MM-DD
-    if (!map.has(dateKey)) map.set(dateKey, []);
-    map.get(dateKey)!.push(slot);
-  }
-
-  return Array.from(map.entries())
-    .slice(0, 4)
-    .map(([dateKey, daySlots]) => ({
-      dateKey,
-      heading: formatHeading(daySlots[0].start_time),
-      slots: daySlots,
-    }));
-}
-
 export function TimeSlotList({ days }: { days: DayGroup[] }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
   if (days.length === 0) return null;
 
   return (
@@ -80,9 +41,15 @@ export function TimeSlotList({ days }: { days: DayGroup[] }) {
           <details
             key={day.dateKey}
             className="group rounded-lg border border-border bg-white"
-            open={i === 0}
+            open={openIndex === i}
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold capitalize select-none text-base hover:bg-muted/50">
+            <summary
+              onClick={(e) => {
+                e.preventDefault();
+                setOpenIndex(openIndex === i ? null : i);
+              }}
+              className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold capitalize select-none text-base hover:bg-muted/50"
+            >
               {day.heading}
               <svg
                 className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180"
