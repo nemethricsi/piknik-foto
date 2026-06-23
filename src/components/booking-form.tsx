@@ -28,18 +28,6 @@ export function BookingForm({ slotId }: { slotId: string }) {
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="phone">Telefonszám</Label>
-        <Input
-          id="phone"
-          name="phone"
-          type="tel"
-          required
-          placeholder="+36 30 123 4567"
-          autoComplete="tel"
-        />
-      </div>
-
       {state?.error && (
         <p className="text-sm text-destructive">{state.error}</p>
       )}

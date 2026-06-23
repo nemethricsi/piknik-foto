@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const email = session.customer_details?.email ?? session.metadata?.customer_email
-  const phone = session.metadata?.phone
+  const phone = session.customer_details?.phone ?? null
   const slotId = session.metadata?.time_slot_id
   const fullName = session.customer_details?.name ?? null
   const spaceIdx = fullName?.indexOf(" ") ?? -1
